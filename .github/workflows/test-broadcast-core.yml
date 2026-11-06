@@ -1,0 +1,24 @@
+name: Broadcast V05 Core Unit Tests
+
+on:
+  push:
+    branches: [broadcast-v05-development]
+    paths:
+      - 'broadcast_core/**'
+      - 'tests/test_broadcast_core.py'
+      - '.github/workflows/test-broadcast-core.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-tests:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run synchronization and framing unit tests
+        run: python -m unittest discover -s tests -p "test_broadcast_core.py" -v
