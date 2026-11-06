@@ -1,0 +1,2 @@
+# Build-only tools. Use the exact known-good application requirements separately.
+pyinstaller>=6.10,<7
