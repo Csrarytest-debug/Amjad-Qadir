@@ -1,0 +1,58 @@
+name: Compile Broadcast-Studio Pro Windows Setup
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-installer:
+    runs-on: windows-2022
+    timeout-minutes: 120
+    steps:
+      - name: Checkout clean installer pipeline
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: x64
+
+      - name: Verify complete application source is present
+        shell: pwsh
+        run: |
+          $required = @(
+            "broadcast_studio_professional.py",
+            "requirements-app.txt",
+            "tools/ffmpeg.exe",
+            "tools/ffprobe.exe",
+            "ai_models"
+          )
+          $missing = $required | Where-Object { -not (Test-Path $_) }
+          if ($missing.Count -gt 0) {
+            Write-Error ("Application source or dependencies not yet committed: " + ($missing -join ", ") + ". The pipeline ZIP alone is not the app.")
+            exit 1
+          }
+
+      - name: Ensure Inno Setup is available
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+          }
+          if (-not (Test-Path $iscc)) { throw "Inno Setup ISCC.exe not installed" }
+
+      - name: Build verified standalone Windows bundle and Setup EXE
+        shell: cmd
+        run: call BUILD_WINDOWS.bat
+
+      - name: Upload compiled Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Broadcast-Studio-Pro-V05.0-Windows-Installer
+          path: Installer/Broadcast-Studio-Pro-V05.0-Setup.exe
+          if-no-files-found: error
+          retention-days: 14
